@@ -5,13 +5,13 @@ using UnityEngine.InputSystem;
 
 public class PlayerMovement : MonoBehaviour
 {
+    [SerializeField] private float _rotateSpeed;
+    [SerializeField] private float _accelerationSpeed = 5;
+    [SerializeField] private float _damping = 5;
+
+    [SerializeField] private GameObject _playerSprite;
     private PlayerControls _playerControls;
-    private Rigidbody2D _rigidbody2D;
-    
-
-
-    [SerializeField]private float _rotateSpeed;
-    [SerializeField]private float _accelerationSpeed = 5;
+    private Rigidbody2D _rigidbody2D; 
 
     private float _maxShipSpeed = 5;
     private float _currentSpeed;
@@ -20,59 +20,33 @@ public class PlayerMovement : MonoBehaviour
 
     private void Awake()
     {
-        _playerControls = new PlayerControls();
+        CreatePlayerInputs();
     }
 
     private void OnEnable()
     {
-        _playerControls.Enable();
-        _playerControls.Player.Rotate.performed += OnRotatePerformed;
-        _playerControls.Player.Rotate.canceled += OnRotateCanceled;
-
-        _playerControls.Player.Accelerate.performed += OnAcceleratePerformed;
-        _playerControls.Player.Accelerate.canceled += OnAccelerateCanceled;
+        EnableInputs();
     }
 
     private void OnDisable()
     {
-        _playerControls.Disable();
-        _playerControls.Player.Rotate.performed -= OnRotatePerformed;
-        _playerControls.Player.Rotate.canceled -= OnRotateCanceled;
-
-        _playerControls.Player.Accelerate.performed -= OnAcceleratePerformed;
-        _playerControls.Player.Accelerate.canceled -= OnAccelerateCanceled;
+        DisableInputs();
     }
 
     void Start()
     {
-        _rigidbody2D = GetComponent<Rigidbody2D>();
+        GetComponents();
     }
 
     private void Update()
     {
-        if(_mover != 0 && _currentSpeed < _maxShipSpeed)
-        {
-            _currentSpeed += _accelerationSpeed * Time.deltaTime;
-        }
-
-        if(_mover == 0 && _currentSpeed > 0)
-        {
-            _currentSpeed -= (_accelerationSpeed* 5) * Time.deltaTime;
-            if(_currentSpeed< 0)
-            {
-                _currentSpeed = 0;
-            }
-        }
+        ShipAcceleration();
     }
 
-    // Update is called once per frame
     void FixedUpdate()
     {
         RotateShip();
-        Vector2 direction = new Vector2(transform.up.x, transform.up.y);
-        // _rigidbody2D.velocity = direction * Time.fixedDeltaTime * _currentSpeed *_shipSpeed;
-        _rigidbody2D.velocity = direction * _currentSpeed;
-
+        MoveShip();
     }
 
     private void OnRotatePerformed(InputAction.CallbackContext ctx)
@@ -97,6 +71,59 @@ public class PlayerMovement : MonoBehaviour
 
     private void RotateShip()
     {
-        transform.Rotate(Vector3.forward * (_direction * _rotateSpeed));
+        _playerSprite.transform.Rotate(Vector3.forward * (_direction * _rotateSpeed));
+    }
+
+    private void MoveShip()
+    {
+        Vector2 direction = new Vector2(-_playerSprite.transform.up.x, -_playerSprite.transform.up.y);
+        _rigidbody2D.velocity = direction * _currentSpeed;
+    }
+
+    private void ShipAcceleration()
+    {
+        if (_mover != 0 && _currentSpeed < _maxShipSpeed)
+        {
+            _currentSpeed += _accelerationSpeed * Time.deltaTime;
+        }
+
+        if (_mover == 0 && _currentSpeed > 0)
+        {
+            _currentSpeed -= _damping * Time.deltaTime;
+            if (_currentSpeed < 0)
+            {
+                _currentSpeed = 0;
+            }
+        }
+    }
+
+    private void CreatePlayerInputs()
+    {
+        _playerControls = new PlayerControls();
+    }
+
+    private void GetComponents()
+    {
+        _rigidbody2D = GetComponent<Rigidbody2D>();
+    }
+
+    private void EnableInputs()
+    {
+        _playerControls.Enable();
+        _playerControls.Player.Rotate.performed += OnRotatePerformed;
+        _playerControls.Player.Rotate.canceled += OnRotateCanceled;
+
+        _playerControls.Player.Accelerate.performed += OnAcceleratePerformed;
+        _playerControls.Player.Accelerate.canceled += OnAccelerateCanceled;
+    }
+
+    private void DisableInputs()
+    {
+        _playerControls.Disable();
+        _playerControls.Player.Rotate.performed -= OnRotatePerformed;
+        _playerControls.Player.Rotate.canceled -= OnRotateCanceled;
+
+        _playerControls.Player.Accelerate.performed -= OnAcceleratePerformed;
+        _playerControls.Player.Accelerate.canceled -= OnAccelerateCanceled;
     }
 }
